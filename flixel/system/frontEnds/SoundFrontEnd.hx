@@ -126,6 +126,48 @@ class SoundFrontEnd
 	public function load(?EmbeddedSound:FlxSoundAsset, Volume:Float = 1, Looped:Bool = false, ?Group:FlxSoundGroup, AutoDestroy:Bool = false,
 			AutoPlay:Bool = false, ?URL:String, ?OnComplete:Void->Void, ?OnLoad:Void->Void):FlxSound
 	{
+                #if html5moment
+		if ((EmbeddedSound == null) && (URL == null))
+		{
+			FlxG.log.warn("FlxG.sound.load() requires either\nan embedded sound or a URL to work.");
+			return null;
+		}
+
+		music:FlxSound = list.recycle(FlxSound);
+
+		if (EmbeddedSound != null)
+		{
+			music.loadEmbedded(EmbeddedSound, Looped, AutoDestroy, OnComplete);
+			loadHelper(music, Volume, Group, AutoPlay);
+			// Call OnlLoad() because the sound already loaded
+			if (OnLoad != null && music != null)
+				OnLoad();
+		}
+		else
+		{
+			var loadCallback = OnLoad;
+			if (AutoPlay)
+			{
+				// Auto play the sound when it's done loading
+				loadCallback = function()
+				{
+					music.play();
+
+					if (OnLoad != null)
+						OnLoad();
+				}
+			}
+
+			music.loadStream(URL, Looped, AutoDestroy, OnComplete, loadCallback);
+			loadHelper(music, Volume, Group);
+		}
+
+                music.volume = Volume;
+		music.persist = true;
+		music.group = (Group == null) ? defaultMusicGroup : Group;
+
+		return music;
+                #else
 		if ((EmbeddedSound == null) && (URL == null))
 		{
 			FlxG.log.warn("FlxG.sound.load() requires either\nan embedded sound or a URL to work.");
@@ -162,6 +204,7 @@ class SoundFrontEnd
 		}
 
 		return sound;
+                #end
 	}
 
 	function loadHelper(sound:FlxSound, Volume:Float, Group:FlxSoundGroup, AutoPlay:Bool = false):FlxSound
