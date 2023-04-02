@@ -133,7 +133,7 @@ class SoundFrontEnd
 			return null;
 		}
 
-		music:FlxSound = list.recycle(FlxSound);
+		music = list.recycle(FlxSound);
 
 		if (EmbeddedSound != null)
 		{
